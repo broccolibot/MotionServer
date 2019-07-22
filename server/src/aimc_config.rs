@@ -12,7 +12,7 @@ pub enum AIMCMode {
 
 impl AIMCMode {
     /// Convert this AIMCMode into a series of messages that initialize the device
-    pub fn into_messages(&self) -> Vec<AIMCMessage> {
+    pub fn messages(&self) -> Vec<AIMCMessage> {
         match self {
             AIMCMode::PID(kp, ki, kd) => vec![
                 AIMCMessage::ModePID,
@@ -46,9 +46,9 @@ impl Default for AIMCConfig {
 impl AIMCConfig {
     /// Construct a new AIMC object from the specified I2C device file, and attempt to set the
     /// parameters specified in the config struct.
-    pub fn into_aimc<P: AsRef<Path>>(&self, i2c_device_file: P) -> Result<AIMC, LinuxI2CError> {
+    pub fn into_aimc<P: AsRef<Path>>(self, i2c_device_file: P) -> Result<AIMC, LinuxI2CError> {
         let mut instance = AIMC::new(i2c_device_file, self.address)?;
-        for message in self.mode.into_messages() {
+        for message in self.mode.messages() {
             instance.write_message(message)?;
         }
         Ok(instance)

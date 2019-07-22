@@ -16,7 +16,7 @@ impl Dispatcher {
             let device_file = config
                 .i2c_device_file
                 .clone()
-                .ok_or(String::from("No I2C config file specified"))?;
+                .ok_or_else(|| String::from("No I2C config file specified"))?;
             devices.insert(name, Box::new(parameters.into_aimc(device_file)?));
         }
 

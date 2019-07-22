@@ -58,8 +58,8 @@ pub enum AIMCMessage {
 impl AIMCMessage {
     /// Convert this message into device-dependent bytes.
     /// Note that values start at 1 as 0 may signify an error.
-    pub fn into_bytes(&self) -> [u8; 5] {
-        match *self {
+    pub fn into_bytes(self) -> [u8; 5] {
+        match self {
             AIMCMessage::Enable(value) => get_bytes_bool(1, value),
             AIMCMessage::SetTarget(value) => get_bytes_f32(2, value),
             AIMCMessage::Reset => get_bytes_op(3),

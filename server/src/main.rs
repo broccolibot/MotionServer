@@ -46,7 +46,9 @@ fn main() {
     let mut args = std::env::args();
     args.next();
 
-    let config_dir = &args.next().unwrap_or(DEFAULT_CONFIG_DIR.to_string());
+    let config_dir = &args
+        .next()
+        .unwrap_or_else(|| DEFAULT_CONFIG_DIR.to_string());
 
     let server_config_file = match File::open(&config_dir) {
         Ok(f) => f,
