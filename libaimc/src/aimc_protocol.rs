@@ -1,4 +1,3 @@
-// Arduino-based Intelligent Motor Controller protocol
 use byteorder::{ByteOrder, LittleEndian};
 
 // Currently, all AIMCs are little endian

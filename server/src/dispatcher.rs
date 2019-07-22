@@ -1,8 +1,5 @@
-use crate::{
-    aimc::{AIMCConfig, AIMC},
-    generic_message::*,
-    trace_device::TraceDevice,
-};
+use crate::{aimc_config::AIMCConfig, generic_message::*, trace_device::TraceDevice};
+use libaimc::{AIMC, AIMCMessage};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
@@ -20,7 +17,7 @@ impl Dispatcher {
                 .i2c_device_file
                 .clone()
                 .ok_or(String::from("No I2C config file specified"))?;
-            devices.insert(name, Box::new(AIMC::from_config(device_file, parameters)?));
+            devices.insert(name, Box::new(parameters.into_aimc(device_file)?));
         }
 
         for name in config.debug_devices {
@@ -75,4 +72,14 @@ impl Default for DispatcherConfig {
 pub enum DispatchError {
     MissingKey(String),
     ControllerFailure(Box<Error>),
+}
+
+impl GenericDispatch for AIMC {
+    fn dispatch(&mut self, command: &GenericCommand) -> Result<(), Box<Error>> {
+        self.write_message(match *command {
+            GenericCommand::Enable(enable) => AIMCMessage::Enable(enable),
+            GenericCommand::SetTarget(target) => AIMCMessage::SetTarget(target),
+        })
+        .map_err(|e| Box::new(e) as _) //TODO: Remove the as _ when the compiler updates >_>
+    }
 }

@@ -1,5 +1,6 @@
-use super::AIMCMessage;
+use libaimc::{AIMCMessage, LinuxI2CError, AIMC};
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 /// Mode setting for the config file
 #[derive(Serialize, Deserialize, Clone, Copy)]
@@ -39,5 +40,17 @@ impl Default for AIMCConfig {
             address: 0x00,
             mode: AIMCMode::PID(0.0, 0.0, 0.0),
         }
+    }
+}
+
+impl AIMCConfig {
+    /// Construct a new AIMC object from the specified I2C device file, and attempt to set the
+    /// parameters specified in the config struct.
+    pub fn into_aimc<P: AsRef<Path>>(&self, i2c_device_file: P) -> Result<AIMC, LinuxI2CError> {
+        let mut instance = AIMC::new(i2c_device_file, self.address)?;
+        for message in self.mode.into_messages() {
+            instance.write_message(message)?;
+        }
+        Ok(instance)
     }
 }
