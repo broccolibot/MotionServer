@@ -1,82 +1,78 @@
 use crate::{
-    aimc_config::AIMCConfig, aimc_conversion, generic_message::*, i2c_trace_mock::I2CTraceMock,
+    aimc::{AIMCConfig, AIMC},
+    generic_message::*,
+    trace_device::TraceDevice,
 };
-use i2cdev::core::I2CDevice;
-use i2cdev::linux::{LinuxI2CDevice, LinuxI2CError};
-use log::info;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::error::Error;
 
-pub enum DispatcherDevice {
-    AIMC(LinuxI2CDevice),
-    DebugTrace,
-}
-
-impl DispatcherDevice {
-    pub fn dispatch(&mut self, command: &GenericCommand) -> Result<(), DispatchError> {
-        match self {
-            DispatcherDevice::AIMC(i2chandle) => i2chandle
-                .write(
-                    &aimc_conversion::convert(command).map_err(|e| DispatchError::Conversion(e))?,
-                )
-                .map_err(|e| DispatchError::I2C(e)),
-            DispatcherDevice::DebugTrace => {
-                info!("Dispatcher trace: {:?}", command);
-                Ok(())
-            }
-        }
-    }
-}
-
-pub struct Dispatcher(HashMap<String, DispatcherDevice>);
+/// Command dispatcher. A translation layer between GenericCommands and real devices.
+pub struct Dispatcher(HashMap<String, Box<dyn GenericDispatch>>);
 
 impl Dispatcher {
-    pub fn from_config(config: DispatcherConfig) -> Result<Self, DispatcherCreationError> {
-        let mut devices = HashMap::new();
+    /// Initialize the dispatcher from the specified config struct.
+    pub fn from_config(config: DispatcherConfig) -> Result<Self, Box<Error>> {
+        let mut devices: HashMap<String, Box<dyn GenericDispatch>> = HashMap::new();
 
         for (name, parameters) in config.aimcs {
-            let device = LinuxI2CDevice::new(config.i2c_device_file, parameters.address)
-                .map_err(|e| DispatcherCreationError::I2C(e))?;
-            devices.insert(String::from(name), DispatcherDevice::AIMC(device));
+            let device_file = config
+                .i2c_device_file
+                .clone()
+                .ok_or(String::from("No I2C config file specified"))?;
+            devices.insert(name, Box::new(AIMC::from_config(device_file, parameters)?));
         }
 
         for name in config.debug_devices {
-            devices.insert(name, DispatcherDevice::DebugTrace);
+            devices.insert(name.clone(), Box::new(TraceDevice::new(name)));
         }
 
         Ok(Self(devices))
     }
 
+    /// Dispatch a generic command to the devices
     pub fn dispatch(&mut self, message: GenericMessage) -> Result<(), DispatchError> {
         match message {
             GenericMessage::MessageAll(command) => {
                 for value in self.0.values_mut() {
-                    value.dispatch(&command)?;
+                    value
+                        .dispatch(&command)
+                        .map_err(|e| DispatchError::ControllerFailure(e))?;
                 }
                 Ok(())
             }
-            GenericMessage::Controller(motor, command) => match self.0.get_mut(&motor) {
-                Some(device) => device.dispatch(&command),
-                None => Err(DispatchError::MissingKey(motor)),
+            GenericMessage::Controller(name, command) => match self.0.get_mut(&name) {
+                Some(device) => device
+                    .dispatch(&command)
+                    .map_err(|e| DispatchError::ControllerFailure(e)),
+                None => Err(DispatchError::MissingKey(name)),
             },
         }
     }
 }
 
-pub struct DispatcherConfig<'a> {
-    pub i2c_device_file: &'a str,
+#[derive(Serialize, Deserialize)]
+pub struct DispatcherConfig {
+    pub i2c_device_file: Option<String>,
     pub debug_devices: Vec<String>,
-    pub aimcs: HashMap<&'a str, AIMCConfig>,
+    pub aimcs: HashMap<String, AIMCConfig>,
 }
 
-#[derive(Debug)]
-pub enum DispatcherCreationError {
-    //ConflictingNames(Vec<String>),
-    I2C(LinuxI2CError),
+impl Default for DispatcherConfig {
+    fn default() -> Self {
+        Self {
+            i2c_device_file: None,
+            aimcs: [("example".to_string(), AIMCConfig::default())]
+                .iter()
+                .cloned()
+                .collect(),
+            debug_devices: vec!["debug".to_string()],
+        }
+    }
 }
 
 #[derive(Debug)]
 pub enum DispatchError {
     MissingKey(String),
-    I2C(LinuxI2CError),
-    Conversion(GenericMessageConversionError),
+    ControllerFailure(Box<Error>),
 }

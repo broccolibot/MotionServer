@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::error::Error;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum GenericCommand {
@@ -12,7 +13,6 @@ pub enum GenericMessage {
     MessageAll(GenericCommand),
 }
 
-#[derive(Debug)]
-pub enum GenericMessageConversionError {
-    Unsupported(GenericCommand),
+pub trait GenericDispatch {
+    fn dispatch(&mut self, command: &GenericCommand) -> Result<(), Box<Error>>;
 }
