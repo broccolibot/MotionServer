@@ -2,7 +2,6 @@
 use crate::{read_encoder_target_pair, AIMCMessage};
 pub use i2cdev::linux::LinuxI2CError;
 use i2cdev::{core::I2CDevice, linux::LinuxI2CDevice};
-use std::error::Error;
 use std::path::Path;
 
 pub struct AIMC {

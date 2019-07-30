@@ -1,4 +1,6 @@
 use byteorder::{ByteOrder, LittleEndian};
+#[cfg(feature = "serde_support")]
+use serde::{Serialize, Deserialize};
 
 // Currently, all AIMCs are little endian
 type DeviceEndian = LittleEndian;
@@ -48,6 +50,7 @@ fn get_bytes_bool(operation: u8, data: bool) -> [u8; 5] {
 
 /// Single communication from host to device
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum AIMCMessage {
     Enable(bool),
     SetTarget(f32),

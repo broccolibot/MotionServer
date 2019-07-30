@@ -1,4 +1,4 @@
-use log::{error, trace, warn};
+use log::{error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use server::dispatcher::*;
 use server::generic_message::*;
@@ -83,6 +83,8 @@ fn main() {
     let address = server_config.socket_address;
     let socket_receiver = net::UdpSocket::bind(address).expect("Server failed to bind UDP socket!");
 
+    info!("Starting main loop");
+
     'message_loop: loop {
         let mut buf = [0u8; MESSAGE_BUFFER_SIZE];
 
@@ -94,7 +96,7 @@ fn main() {
             }
             Ok(n) => {
                 if n == MESSAGE_BUFFER_SIZE {
-                    warn!("Message was the same size as MESSAGE_BUFFER_SIZE. This may suggest that the buffer size needs to be larger.");
+                    warn!("Message was the same size as its buffer. This may suggest that the buffer size needs to be larger.");
                 }
                 &buf[..n]
             }
@@ -112,6 +114,8 @@ fn main() {
             }
             Ok(v) => v,
         };
+
+        info!("GOT MESSAGE: {:?}", message_struct);
 
         // Attempt to dispatch the command to the motor controllers
         if let Err(e) = dispatcher.dispatch(message_struct) {
