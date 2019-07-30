@@ -6,9 +6,13 @@ type DeviceEndian = LittleEndian;
 // Byte slice that make up the content of the message
 const CONTENT_BYTE_SLICE: std::ops::Range<usize> = 1..5;
 
-/// Read a device-produced byte stream into a float
-pub fn get_f32_bytes(bytes: &[u8]) -> f32 {
-    DeviceEndian::read_f32(&bytes)
+/// Read device-produced bytes into a tuple of type (encoder, target)
+pub fn read_encoder_target_pair(bytes: [u8; 8]) -> (f32, f32) {
+    use byteorder::ReadBytesExt;
+    let mut cursor = std::io::Cursor::new(bytes);
+    let encoder = cursor.read_f32::<DeviceEndian>().unwrap();
+    let target = cursor.read_f32::<DeviceEndian>().unwrap();
+    (encoder, target)
 }
 
 /// Create a buffer and only set the opcode byte
@@ -42,7 +46,7 @@ fn get_bytes_bool(operation: u8, data: bool) -> [u8; 5] {
 }
 
 /// Single communication from host to device
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum AIMCMessage {
     Enable(bool),
     SetTarget(f32),

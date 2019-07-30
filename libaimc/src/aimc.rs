@@ -1,5 +1,5 @@
 // Arduino-based Intelligent Motor Controller protocol
-use crate::{get_f32_bytes, AIMCMessage};
+use crate::{read_encoder_target_pair, AIMCMessage};
 pub use i2cdev::linux::LinuxI2CError;
 use i2cdev::{core::I2CDevice, linux::LinuxI2CDevice};
 use std::error::Error;
@@ -23,9 +23,9 @@ impl AIMC {
     }
 
     /// Read the encoder
-    pub fn read_encoder(&mut self) -> Result<f32, LinuxI2CError> {
-        let mut buffer = [0u8; 4];
+    pub fn read_encoder_and_target(&mut self) -> Result<(f32, f32), LinuxI2CError> {
+        let mut buffer = [0u8; 8];
         self.i2c_device.read(&mut buffer)?;
-        Ok(get_f32_bytes(&buffer))
+        Ok(read_encoder_target_pair(buffer))
     }
 }
