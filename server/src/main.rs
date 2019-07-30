@@ -9,22 +9,20 @@ use std::{
     path::Path,
 };
 
-const DEFAULT_CONFIG_DIR: &str = "server.json";
+const DEFAULT_CONFIG_DIR: &str = "server.yml";
 const MESSAGE_BUFFER_SIZE: usize = 4096;
 
 #[derive(Serialize, Deserialize)]
 struct ServerConfig {
     pub socket_address: net::SocketAddr,
+    #[serde(flatten)]
     pub dispatcher_config: DispatcherConfig,
 }
 
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            socket_address: net::SocketAddr::new(
-                net::IpAddr::V4(net::Ipv4Addr::new(127, 0, 0, 1)),
-                5060,
-            ),
+            socket_address: "127.0.0.1:5060".parse().unwrap(),
             dispatcher_config: Default::default(),
         }
     }
@@ -32,8 +30,7 @@ impl Default for ServerConfig {
 
 fn write_default_config<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
     let mut file = File::create(path)?;
-    serde_json::to_writer_pretty(&mut file, &ServerConfig::default())
-        .expect("Failed to serialize dispatcher config");
+    serde_yaml::to_writer(&file, &ServerConfig::default()).unwrap();
     Ok(())
 }
 
@@ -69,7 +66,7 @@ fn main() {
         }
     };
 
-    let server_config: ServerConfig = match serde_json::from_reader(server_config_file) {
+    let server_config: ServerConfig = match serde_yaml::from_reader(server_config_file) {
         Ok(c) => c,
         Err(e) => {
             error!("Error parsing server config file: {:?}", e);
@@ -114,8 +111,6 @@ fn main() {
             }
             Ok(v) => v,
         };
-
-        info!("GOT MESSAGE: {:?}", message_struct);
 
         // Attempt to dispatch the command to the motor controllers
         if let Err(e) = dispatcher.dispatch(message_struct) {

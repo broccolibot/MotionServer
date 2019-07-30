@@ -12,12 +12,12 @@ impl Dispatcher {
     pub fn from_config(config: DispatcherConfig) -> Result<Self, Box<Error>> {
         let mut devices: HashMap<String, Box<dyn GenericDispatch>> = HashMap::new();
 
-        for (name, parameters) in config.aimcs {
-            let device_file = config
-                .i2c_device_file
-                .clone()
-                .ok_or_else(|| String::from("No I2C config file specified"))?;
-            devices.insert(name, Box::new(parameters.into_aimc(device_file)?));
+        for (name, config) in config.aimcs {
+            let mut device = AIMC::new(config.i2c_bus, config.address)?;
+            for command in config.startup_commands {
+                device.write_message(command)?;
+            }
+            devices.insert(name, Box::new(device));
         }
 
         for name in config.debug_devices {
@@ -50,7 +50,6 @@ impl Dispatcher {
 
 #[derive(Serialize, Deserialize)]
 pub struct DispatcherConfig {
-    pub i2c_device_file: Option<String>,
     pub debug_devices: Vec<String>,
     pub aimcs: HashMap<String, AIMCConfig>,
 }
@@ -58,7 +57,6 @@ pub struct DispatcherConfig {
 impl Default for DispatcherConfig {
     fn default() -> Self {
         Self {
-            i2c_device_file: None,
             aimcs: [("example".to_string(), AIMCConfig::default())]
                 .iter()
                 .cloned()

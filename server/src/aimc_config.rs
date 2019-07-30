@@ -1,36 +1,12 @@
-use libaimc::{AIMCMessage, LinuxI2CError, AIMC};
+use libaimc::AIMCMessage;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
-
-/// Mode setting for the config file
-#[derive(Serialize, Deserialize, Clone, Copy)]
-pub enum AIMCMode {
-    PID(f32, f32, f32),
-    Pneumatic,
-    PWM,
-}
-
-impl AIMCMode {
-    /// Convert this AIMCMode into a series of messages that initialize the device
-    pub fn messages(&self) -> Vec<AIMCMessage> {
-        match self {
-            AIMCMode::PID(kp, ki, kd) => vec![
-                AIMCMessage::ModePID,
-                AIMCMessage::SetKp(*kp),
-                AIMCMessage::SetKi(*ki),
-                AIMCMessage::SetKd(*kd),
-            ],
-            AIMCMode::PWM => vec![AIMCMessage::ModePWM],
-            AIMCMode::Pneumatic => vec![AIMCMessage::ModePneumatic],
-        }
-    }
-}
 
 /// In-memory representation of AIMC config file
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AIMCConfig {
     pub address: u16,
-    pub mode: AIMCMode,
+    pub i2c_bus: String,
+    pub startup_commands: Vec<AIMCMessage>,
 }
 
 impl Default for AIMCConfig {
@@ -38,19 +14,23 @@ impl Default for AIMCConfig {
     fn default() -> Self {
         Self {
             address: 0x00,
-            mode: AIMCMode::PID(0.0, 0.0, 0.0),
+            i2c_bus: "/dev/i2c-0".to_string(),
+            startup_commands: vec![
+                AIMCMessage::SetTarget(0.0),
+                AIMCMessage::Reset,
+                AIMCMessage::Enable(false),
+                AIMCMessage::EncoderPolarity(false),
+                AIMCMessage::LimitPwm(32),
+                AIMCMessage::ModePWM,
+                AIMCMessage::ModePneumatic,
+                AIMCMessage::ModePID,
+                AIMCMessage::SetKp(0.1),
+                AIMCMessage::SetKi(0.0),
+                AIMCMessage::SetKd(0.0),
+                AIMCMessage::Home(0),
+                AIMCMessage::LimitTargetMax(0.0),
+                AIMCMessage::LimitTargetMin(0.0),
+            ],
         }
-    }
-}
-
-impl AIMCConfig {
-    /// Construct a new AIMC object from the specified I2C device file, and attempt to set the
-    /// parameters specified in the config struct.
-    pub fn into_aimc<P: AsRef<Path>>(self, i2c_device_file: P) -> Result<AIMC, LinuxI2CError> {
-        let mut instance = AIMC::new(i2c_device_file, self.address)?;
-        for message in self.mode.messages() {
-            instance.write_message(message)?;
-        }
-        Ok(instance)
     }
 }

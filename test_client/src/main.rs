@@ -19,11 +19,11 @@ fn main() {
     };
     let socket_sender =
         net::UdpSocket::bind("0.0.0.0:0").expect("Server failed to bind UDP socket!");
-    let mut enable = false;
+    let mut target = 0.0;
     loop {
-        enable = !enable;
+        target += 0.1;
         let message =
-            GenericMessage::Controller("example".to_string(), GenericCommand::Enable(enable));
+            GenericMessage::Controller("bench".to_string(), GenericCommand::SetTarget(target));
         let message_string = serde_json::to_string_pretty(&message).unwrap();
         socket_sender
             .send_to(message_string.as_bytes(), send_address)
