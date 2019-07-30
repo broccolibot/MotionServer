@@ -6,13 +6,14 @@ type DeviceEndian = LittleEndian;
 // Byte slice that make up the content of the message
 const CONTENT_BYTE_SLICE: std::ops::Range<usize> = 1..5;
 
-/// Read device-produced bytes into a tuple of type (encoder, target)
-pub fn read_encoder_target_pair(bytes: [u8; 8]) -> (f32, f32) {
+/// Read device-produced bytes into a tuple of type (encoder, target, pid_out)
+pub fn read_encoder_target_pair(bytes: [u8; 12]) -> (f32, f32, f32) {
     use byteorder::ReadBytesExt;
     let mut cursor = std::io::Cursor::new(bytes);
     let encoder = cursor.read_f32::<DeviceEndian>().unwrap();
     let target = cursor.read_f32::<DeviceEndian>().unwrap();
-    (encoder, target)
+    let pid_out = cursor.read_f32::<DeviceEndian>().unwrap();
+    (encoder, target, pid_out)
 }
 
 /// Create a buffer and only set the opcode byte

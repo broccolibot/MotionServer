@@ -23,8 +23,8 @@ impl AIMC {
     }
 
     /// Read the encoder
-    pub fn read_encoder_and_target(&mut self) -> Result<(f32, f32), LinuxI2CError> {
-        let mut buffer = [0u8; 8];
+    pub fn read_encoder_and_target(&mut self) -> Result<(f32, f32, f32), LinuxI2CError> {
+        let mut buffer = [0u8; 12];
         self.i2c_device.read(&mut buffer)?;
         Ok(read_encoder_target_pair(buffer))
     }

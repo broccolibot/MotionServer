@@ -1,6 +1,18 @@
 use libaimc::AIMCMessage;
 use std::fmt;
 
+pub const HELP_LINES: &[&str] = &[
+    "AIMC Jogger help:",
+    "\tset target <float> ",
+    "\tset enable <bool>",
+    "\tset home <int>",
+    "\tset kp <float>",
+    "\tset ki <float>",
+    "\tset kd <float>",
+    "\tset polarity <bool>",
+    "\tget",
+];
+
 pub enum ActionParseError<'a> {
     Unrecognized(&'a str),
     MissingArg(&'static str),
@@ -12,7 +24,7 @@ impl fmt::Display for ActionParseError<'_> {
         match self {
             ActionParseError::Unrecognized(level) => write!(f, "Did not recognize '{}'.", level),
             ActionParseError::At(text) => write!(f, "Error parsing at '{}'.", text),
-            ActionParseError::MissingArg(text) => write!(f, "Missing '{}' argument.", text),
+            ActionParseError::MissingArg(arg) => write!(f, "Missing '{}' argument.", arg),
         }
     }
 }
@@ -42,11 +54,12 @@ fn aimcmessage_from_str<'a>(
         .ok_or(ActionParseError::MissingArg("parameter"))?
     {
         "target" | "t" => Ok(AIMCMessage::SetTarget(parse_arg(args, "setpoint")?)),
-        "enable" => Ok(AIMCMessage::Enable(parse_arg(args, "enabled")?)),
+        "enable" | "e" => Ok(AIMCMessage::Enable(parse_arg(args, "enabled")?)),
         "home" | "h" => Ok(AIMCMessage::Home(parse_arg(args, "speed")?)),
         "kp" | "p" => Ok(AIMCMessage::SetKp(parse_arg(args, "kP")?)),
         "ki" | "i" => Ok(AIMCMessage::SetKi(parse_arg(args, "kI")?)),
         "kd" | "d" => Ok(AIMCMessage::SetKd(parse_arg(args, "kD")?)),
+        "polarity" | "pl" => Ok(AIMCMessage::EncoderPolarity(parse_arg(args, "polarity")?)),
         other => Err(ActionParseError::Unrecognized(other)),
     }
 }
@@ -55,10 +68,8 @@ impl Action {
     pub fn from_commandline<'a>(
         args: &mut Iterator<Item = &'a str>,
     ) -> Result<Self, ActionParseError<'a>> {
-        match args
-            .next()
-            .ok_or(ActionParseError::MissingArg("Missing command"))?
-        {
+        //match args.next().ok_or(ActionParseError::MissingArg("command"))? {
+        match args.next().unwrap_or("g") {
             "set" | "write" | "s" => Ok(Action::Write(aimcmessage_from_str(args)?)),
             "help" => Ok(Action::Help),
             "get" | "read" | "g" => Ok(Action::Read),
