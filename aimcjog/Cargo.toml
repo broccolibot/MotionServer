@@ -1,0 +1,9 @@
+[package]
+name = "aimcjog"
+version = "0.1.0"
+authors = ["Masterchef365 <duncan.freeman1@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+libaimc = { path = "../libaimc" }
+rustyline = "5.0.0"

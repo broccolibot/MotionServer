@@ -2,4 +2,6 @@
 members = [
     "server",
     "libaimc",
+    "aimcjog",
+    "test_client"
 ]

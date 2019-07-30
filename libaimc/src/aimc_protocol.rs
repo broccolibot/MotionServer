@@ -6,6 +6,11 @@ type DeviceEndian = LittleEndian;
 // Byte slice that make up the content of the message
 const CONTENT_BYTE_SLICE: std::ops::Range<usize> = 1..5;
 
+/// Read a device-produced byte stream into a float
+pub fn get_f32_bytes(bytes: &[u8]) -> f32 {
+    DeviceEndian::read_f32(&bytes)
+}
+
 /// Create a buffer and only set the opcode byte
 fn get_bytes_op(operation: u8) -> [u8; 5] {
     let mut buffer = [0u8; 5];

@@ -82,22 +82,6 @@ fn main() {
 
     let address = server_config.socket_address;
     let socket_receiver = net::UdpSocket::bind(address).expect("Server failed to bind UDP socket!");
-    let socket_sender = socket_receiver.try_clone().expect("Failed to clone socket");
-
-    // Hnnnng kernel, I'm dummy
-    std::thread::spawn(move || {
-        let mut i = 0.0;
-        loop {
-            i += 0.1;
-            let message =
-                GenericMessage::Controller("debug".to_string(), GenericCommand::SetTarget(i));
-            let message_string = serde_json::to_string_pretty(&message).unwrap();
-            std::thread::sleep(std::time::Duration::from_millis(20));
-            socket_sender
-                .send_to(message_string.as_bytes(), address)
-                .expect("Failed to send");
-        }
-    });
 
     'message_loop: loop {
         let mut buf = [0u8; MESSAGE_BUFFER_SIZE];
