@@ -24,7 +24,7 @@ fn main() {
         target += 0.1;
         let message =
             GenericMessage::Controller("bench".to_string(), GenericCommand::SetTarget(target));
-        let message_string = serde_json::to_string_pretty(&message).unwrap();
+        let message_string = serde_json::to_string(&message).unwrap();
         socket_sender
             .send_to(message_string.as_bytes(), send_address)
             .expect("Failed to send");

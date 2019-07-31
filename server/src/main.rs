@@ -29,7 +29,7 @@ impl Default for ServerConfig {
 }
 
 fn write_default_config<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
-    let mut file = File::create(path)?;
+    let file = File::create(path)?;
     serde_yaml::to_writer(&file, &ServerConfig::default()).unwrap();
     Ok(())
 }
@@ -74,11 +74,22 @@ fn main() {
         }
     };
 
-    let mut dispatcher = Dispatcher::from_config(server_config.dispatcher_config)
-        .expect("Failed to initialise dispatcher");
+    let mut dispatcher = match Dispatcher::from_config(server_config.dispatcher_config) {
+        Ok(d) => d,
+        Err(e) => {
+            error!("Failed to initialise dispatcher: {:?}", e);
+            return;
+        }
+    };
 
     let address = server_config.socket_address;
-    let socket_receiver = net::UdpSocket::bind(address).expect("Server failed to bind UDP socket!");
+    let socket_receiver = match net::UdpSocket::bind(address) {
+        Ok(d) => d,
+        Err(e) => {
+            error!("Server failed to bind UDP socket: {:?}", e);
+            return;
+        }
+    };
 
     info!("Starting main loop");
 
