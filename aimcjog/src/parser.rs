@@ -53,12 +53,15 @@ fn aimcmessage_from_str<'a>(
         .next()
         .ok_or(ActionParseError::MissingArg("parameter"))?
     {
-        "target" | "t" => Ok(AIMCMessage::SetTarget(parse_arg(args, "setpoint")?)),
+        "target" | "t" => Ok(AIMCMessage::SetTarget(parse_arg(args, "target")?)),
         "enable" | "e" => Ok(AIMCMessage::Enable(parse_arg(args, "enabled")?)),
         "home" | "h" => Ok(AIMCMessage::Home(parse_arg(args, "speed")?)),
         "kp" | "p" => Ok(AIMCMessage::SetKp(parse_arg(args, "kP")?)),
         "ki" | "i" => Ok(AIMCMessage::SetKi(parse_arg(args, "kI")?)),
         "kd" | "d" => Ok(AIMCMessage::SetKd(parse_arg(args, "kD")?)),
+        "limit" | "lim" => Ok(AIMCMessage::LimitPwm(parse_arg(args, "PWM")?)),
+        "limittargetmin" | "ltmi" => Ok(AIMCMessage::LimitTargetMin(parse_arg(args, "target")?)),
+        "limittargetmax" | "ltma" => Ok(AIMCMessage::LimitTargetMax(parse_arg(args, "target")?)),
         "polarity" | "pl" => Ok(AIMCMessage::EncoderPolarity(parse_arg(args, "polarity")?)),
         other => Err(ActionParseError::Unrecognized(other)),
     }
