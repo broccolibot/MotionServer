@@ -1,5 +1,5 @@
+use crate::generic_message::{GenericCommand, GenericDeviceSettings, GenericDispatch};
 use log::info;
-use crate::generic_message::{GenericDispatch, GenericCommand};
 use std::error::Error;
 
 pub struct TraceDevice {
@@ -13,7 +13,11 @@ impl TraceDevice {
 }
 
 impl GenericDispatch for TraceDevice {
-    fn dispatch(&mut self, command: &GenericCommand) -> Result<(), Box<Error>> {
+    fn dispatch(
+        &mut self,
+        command: &GenericCommand,
+        _: &GenericDeviceSettings,
+    ) -> Result<(), Box<Error>> {
         info!("Trace \"{}\": {:?}", self.name, command);
         Ok(())
     }

@@ -7,6 +7,8 @@ pub struct AIMCConfig {
     pub address: u16,
     pub i2c_bus: String,
     pub startup_commands: Vec<AIMCMessage>,
+    #[serde(flatten)]
+    pub settings: crate::generic_message::GenericDeviceSettings,
 }
 
 impl Default for AIMCConfig {
@@ -15,6 +17,7 @@ impl Default for AIMCConfig {
         Self {
             address: 0x00,
             i2c_bus: "/dev/i2c-0".to_string(),
+            settings: Default::default(),
             startup_commands: vec![
                 AIMCMessage::SetTarget(0.0),
                 AIMCMessage::Reset,
