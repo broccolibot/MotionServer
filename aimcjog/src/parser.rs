@@ -3,14 +3,18 @@ use std::fmt;
 
 pub const HELP_LINES: &[&str] = &[
     "AIMC Jogger help:",
-    "\tset target <float> ",
-    "\tset enable <bool>",
-    "\tset home <int>",
-    "\tset kp <float>",
-    "\tset ki <float>",
-    "\tset kd <float>",
-    "\tset polarity <bool>",
-    "\tget",
+    "\tset target <float>  // Set target for loop",
+    "\tset enable <bool>   // Set enabled state",
+    "\tset home <int>      // Start homing at specified speed, or 0 to stop",
+    "\tset kp <float>      // Set kP",
+    "\tset ki <float>      // Set kI",
+    "\tset kd <float>      // Set kD",
+    "\tset polarity <bool> // Reverse encoder polarity interpretation",
+    "\tset limit <int>     // Limit PWM",
+    "\tset mode_pwm <int>  // Change to PWM control mode",
+    "\tset mode_pid <int>  // Change to PID control mode",
+    "\tset mode_pneu <int> // Change to Pneumatic control mode",
+    "\tget                 // Return evaluation of internal variables",
 ];
 
 pub enum ActionParseError<'a> {
@@ -37,7 +41,7 @@ pub enum Action {
 }
 
 fn parse_arg<'a, T: std::str::FromStr>(
-    args: &mut Iterator<Item = &'a str>,
+    args: &mut impl Iterator<Item = &'a str>,
     missingerr: &'static str,
 ) -> Result<T, ActionParseError<'a>> {
     match args.next() {
@@ -47,11 +51,11 @@ fn parse_arg<'a, T: std::str::FromStr>(
 }
 
 fn aimcmessage_from_str<'a>(
-    args: &mut Iterator<Item = &'a str>,
+    args: &mut impl Iterator<Item = &'a str>,
 ) -> Result<AIMCMessage, ActionParseError<'a>> {
     match args
         .next()
-        .ok_or(ActionParseError::MissingArg("parameter"))?
+        .ok_or(ActionParseError::MissingArg("operation type"))?
     {
         "target" | "t" => Ok(AIMCMessage::SetTarget(parse_arg(args, "target")?)),
         "enable" | "e" => Ok(AIMCMessage::Enable(parse_arg(args, "enabled")?)),
@@ -63,13 +67,16 @@ fn aimcmessage_from_str<'a>(
         "limittargetmin" | "ltmi" => Ok(AIMCMessage::LimitTargetMin(parse_arg(args, "target")?)),
         "limittargetmax" | "ltma" => Ok(AIMCMessage::LimitTargetMax(parse_arg(args, "target")?)),
         "polarity" | "pl" => Ok(AIMCMessage::EncoderPolarity(parse_arg(args, "polarity")?)),
+        "mode_pwm" | "mpw" => Ok(AIMCMessage::ModePWM),
+        "mode_pid" | "mpi" => Ok(AIMCMessage::ModePID),
+        "mode_pneu" | "mpn" => Ok(AIMCMessage::ModePneumatic),
         other => Err(ActionParseError::Unrecognized(other)),
     }
 }
 
 impl Action {
     pub fn from_commandline<'a>(
-        args: &mut Iterator<Item = &'a str>,
+        args: &mut impl Iterator<Item = &'a str>,
     ) -> Result<Self, ActionParseError<'a>> {
         //match args.next().ok_or(ActionParseError::MissingArg("command"))? {
         match args.next().unwrap_or("g") {

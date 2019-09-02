@@ -6,7 +6,6 @@ use std::{
     fs::File,
     io::{ErrorKind, Write},
     net,
-    path::Path,
 };
 
 const DEFAULT_CONFIG_DIR: &str = "server.yml";
@@ -28,12 +27,6 @@ impl Default for ServerConfig {
     }
 }
 
-fn write_default_config<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
-    let file = File::create(path)?;
-    serde_yaml::to_writer(&file, &ServerConfig::default()).unwrap();
-    Ok(())
-}
-
 fn main() {
     env_logger::Builder::from_default_env()
         .filter(None, log::LevelFilter::Trace)
@@ -53,7 +46,8 @@ fn main() {
             match e.kind() {
                 ErrorKind::NotFound => {
                     error!("Config file not found. Writing defaults to disk and exiting.");
-                    write_default_config(config_dir).expect("Failed to write default config file");
+                    let file = File::create(config_dir).expect("Failed to write default config file");
+                    serde_yaml::to_writer(&file, &ServerConfig::default()).unwrap();
                 }
                 e => {
                     error!(
