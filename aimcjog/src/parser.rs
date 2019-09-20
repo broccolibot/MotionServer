@@ -14,6 +14,8 @@ pub const HELP_LINES: &[&str] = &[
     "\tset mode_pwm <int>  // Change to PWM control mode",
     "\tset mode_pid <int>  // Change to PID control mode",
     "\tset mode_pneu <int> // Change to Pneumatic control mode",
+    "\tset ltma <float>    // Set target limit max",
+    "\tset ltmi <float>    // Set target limit min",
     "\tget                 // Return evaluation of internal variables",
 ];
 
